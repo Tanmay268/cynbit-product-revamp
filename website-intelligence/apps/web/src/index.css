@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens mirror the public Cynbit site (cynbit.in): Material-3-style teal palette,
+ * Plus Jakarta Sans headlines, Manrope body, generous radii and pill buttons.
+ * Brand values were read from the site's published stylesheet; the score/severity colours
+ * below are product additions chosen to sit well with that palette and meet WCAG AA contrast.
+ */
+@theme {
+  --color-primary: #006067;
+  --color-primary-container: #007b83;
+  --color-primary-fixed: #96f1fa;
+  --color-primary-fixed-dim: #7ad5dd;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #d0fbff;
+  --color-secondary: #12629d;
+  --color-secondary-container: #80bdfe;
+  --color-secondary-fixed: #d0e4ff;
+  --color-tertiary: #774e00;
+  --color-tertiary-container: #986400;
+  --color-tertiary-fixed: #ffddb3;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-surface: #f7fafa;
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #f1f4f4;
+  --color-surface-container: #ebeeee;
+  --color-surface-high: #e6e9e9;
+  --color-surface-highest: #e0e3e3;
+  --color-on-surface: #181c1d;
+  --color-on-surface-variant: #3e494a;
+  --color-outline: #6e797a;
+  --color-outline-variant: #bdc9ca;
+  --color-inverse-surface: #2d3131;
+  --color-inverse-on-surface: #eef1f1;
+
+  /* Product additions: score + severity semantics */
+  --color-good: #17784b;
+  --color-good-container: #d6f3e3;
+  --color-fair: #8a5a00;
+  --color-fair-container: #ffe9bf;
+  --color-poor: #ba1a1a;
+  --color-poor-container: #ffdad6;
+  --color-sev-high: #a7410d;
+  --color-sev-high-container: #ffe1d1;
+
+  --font-headline: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
+
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --shadow-card: 0 1px 2px rgb(24 28 29 / 0.05), 0 4px 16px rgb(24 28 29 / 0.04);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* sticky navbar */
+}
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: var(--font-headline); letter-spacing: -0.01em; }
+
+:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+summary { list-style: none; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes pulse-soft { 50% { opacity: 0.55; } }
+.pulse-soft { animation: pulse-soft 1.6s ease-in-out infinite; }
+
+/* "Download PDF" uses the browser's print-to-PDF: hide chrome, expand every finding. */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  details > *:not(summary) { display: block !important; }
+  details { break-inside: avoid; }
+  section { break-inside: auto; }
+  a { color: inherit; text-decoration: none; }
+}
