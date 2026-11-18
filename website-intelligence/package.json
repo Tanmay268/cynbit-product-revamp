@@ -1,0 +1,27 @@
+{
+  "name": "website-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Website Intelligence & Audit Tool - monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev:web": "npm run dev -w @wi/web",
+    "dev:api": "npm run dev -w @wi/api",
+    "dev:worker": "npm run dev -w @wi/worker",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "infra:up": "docker compose up -d postgres redis",
+    "infra:down": "docker compose down",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:validate": "prisma validate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma"
+  }
+}

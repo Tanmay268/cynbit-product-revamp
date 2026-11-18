@@ -1,0 +1,121 @@
+// Website Intelligence data model.
+// Enum values mirror packages/shared/src/constants (keep in sync; a unit test
+// in apps/api asserts they match).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuditStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  PARTIAL // finished, but at least one category was unavailable/failed
+  FAILED
+}
+
+enum CategoryKey {
+  PERFORMANCE
+  SEO
+  ACCESSIBILITY
+  SECURITY
+  BEST_PRACTICES
+}
+
+enum CategoryStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  UNAVAILABLE // analyzer could not produce a result (e.g. missing API key); NOT a zero score
+  FAILED
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum FindingStatus {
+  FAILED
+  WARNING
+  PASSED
+}
+
+model Audit {
+  id            String      @id @default(uuid()) @db.Uuid
+  targetUrl     String // exactly what the user submitted
+  normalizedUrl String // canonical form used for history/comparison
+  overallScore  Int? // null until computed; null when no category produced a score
+  status        AuditStatus @default(QUEUED)
+  errorMessage  String? // safe, user-presentable reason when FAILED
+  createdAt     DateTime    @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  categories AuditCategory[]
+
+  @@index([normalizedUrl, createdAt(sort: Desc)]) // history + comparison per site
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+}
+
+model AuditCategory {
+  id              String         @id @default(uuid()) @db.Uuid
+  auditId         String         @db.Uuid
+  category        CategoryKey
+  score           Int? // null when status != COMPLETED
+  status          CategoryStatus @default(PENDING)
+  passedCount     Int            @default(0)
+  failedCount     Int            @default(0)
+  warningCount    Int            @default(0)
+  executionTimeMs Int?
+  reason          String? // safe reason when UNAVAILABLE / FAILED
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  audit    Audit          @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  findings AuditFinding[]
+
+  @@unique([auditId, category]) // one row per category per audit
+  @@index([auditId])
+}
+
+model AuditFinding {
+  id               String        @id @default(uuid()) @db.Uuid
+  categoryId       String        @db.Uuid
+  ruleId           String // stable rule identifier, e.g. "seo.meta-description.missing"
+  title            String
+  description      String
+  severity         Severity
+  evidence         String?
+  recommendation   String
+  impact           String?
+  status           FindingStatus
+  technicalDetails Json?
+
+  category AuditCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([severity])
+  @@index([ruleId])
+}
+
+model Lead {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  company   String
+  website   String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([email])
+}
