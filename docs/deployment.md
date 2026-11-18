@@ -14,12 +14,12 @@
 | PostgreSQL | Render Postgres | `render.yaml` |
 | Redis | Render Key Value (`maxmemoryPolicy: noeviction`) | `render.yaml` |
 
-The git repository root is the parent Next.js project; this app lives in `website-intelligence/`. Both hosts are pointed at that folder.
+The app lives at the repository root, so both hosts use their default root directory.
 
 ## 1. Render (do this first: you need the API URL for Vercel)
 
 1. Push the repository to GitHub/GitLab.
-2. Render dashboard: **New > Blueprint**, select the repo, and set the **Blueprint file path** to `website-intelligence/render.yaml`.
+2. Render dashboard: **New > Blueprint**, select the repo (`render.yaml` is picked up from the repository root).
 3. When prompted for `sync: false` values:
    - `PAGESPEED_API_KEY`: your Google key (PageSpeed Insights API enabled). Without it Performance is reported *unavailable*.
    - `CORS_ORIGINS`: your Vercel origin, exact match, no trailing slash (e.g. `https://your-app.vercel.app`). If you don't know it yet, put a placeholder and update it after step 2.
@@ -33,7 +33,7 @@ Adjust plans in `render.yaml` to your budget; check current pricing on Render.
 ## 2. Vercel
 
 1. **Add New > Project**, import the same repo.
-2. **Root Directory:** `website-intelligence` (the Vercel settings then come from `vercel.json`: install `npm ci`, build `npm run build -w @wi/web`, output `apps/web/dist`, SPA rewrite so `/audits/:id` deep links work).
+2. **Root Directory:** leave the default (repository root). The settings come from `vercel.json`: install `npm ci`, build `npm run build -w @wi/web`, output `apps/web/dist`, SPA rewrite so `/audits/:id` deep links work.
 3. **Environment variable:** `VITE_API_BASE_URL` = `https://<your-api>.onrender.com/api/v1` (Production and Preview). Vite inlines it at build time, so redeploy after changing it.
 4. Deploy, then put the final Vercel origin into Render's `CORS_ORIGINS` (and redeploy the API). Preview deployments use different origins; add them if you test previews against the real API.
 

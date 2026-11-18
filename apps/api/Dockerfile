@@ -1,4 +1,4 @@
-# Build context: the website-intelligence/ folder  ->  docker build -f apps/api/Dockerfile .
+# Build context: the repository root  ->  docker build -f apps/api/Dockerfile .
 FROM node:22-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app

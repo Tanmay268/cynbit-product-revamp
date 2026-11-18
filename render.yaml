@@ -1,5 +1,4 @@
-# Render Blueprint. In Render: New > Blueprint, pick the repo, and set the Blueprint path to
-# website-intelligence/render.yaml (the repository root is the parent Next.js project).
+# Render Blueprint (repository root). In Render: New > Blueprint, pick the repo; render.yaml is found at the root.
 databases:
   - name: wi-postgres
     databaseName: website_intelligence
@@ -17,8 +16,8 @@ services:
   - type: web
     name: wi-api
     runtime: docker
-    dockerfilePath: ./website-intelligence/apps/api/Dockerfile
-    dockerContext: ./website-intelligence
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
     plan: starter
     healthCheckPath: /api/v1/health
     envVars:
@@ -38,8 +37,8 @@ services:
   - type: worker
     name: wi-worker
     runtime: docker
-    dockerfilePath: ./website-intelligence/apps/worker/Dockerfile
-    dockerContext: ./website-intelligence
+    dockerfilePath: ./apps/worker/Dockerfile
+    dockerContext: .
     plan: standard # headless Chromium needs roughly 1-2 GB RAM; a 512 MB plan will be OOM-killed
     envVars:
       - key: NODE_ENV
