@@ -4,7 +4,7 @@ Audit any website across Performance, SEO, Accessibility, Security and Best Prac
 npm-workspaces monorepo: `apps/web` (Vite + React), `apps/api` (Express), `apps/worker`
 (BullMQ analyzers), `packages/shared` (types, Zod schemas, constants).
 
-> Status: **Milestones 1-6 complete** (architecture; backend; audit infrastructure; analyzers; frontend; lead generation). See the roadmap below.
+> Status: **Milestones 1-6 complete and verified locally** (see the verification report in docs/security.md); deployment (Milestone 7) is pending. See the roadmap below.
 
 ## Lead generation (Milestone 6)
 

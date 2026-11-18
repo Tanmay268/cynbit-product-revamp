@@ -32,7 +32,7 @@ export const CATEGORY_META: Record<AuditCategoryId, CategoryMeta> = {
   security: {
     label: 'Security',
     icon: ShieldCheck,
-    blurb: 'HTTPS and browser-level hardening visible from outside.',
+    blurb: 'HTTPS and browser-level hardening visible from outside. Findings are hardening gaps, not confirmed vulnerabilities.',
     measures: ['HTTPS & certificate', 'Security headers & CSP', 'Cookie attributes'],
   },
   'best-practices': {

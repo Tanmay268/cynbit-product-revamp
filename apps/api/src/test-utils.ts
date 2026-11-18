@@ -20,6 +20,7 @@ export const baseEnv: AppDeps['env'] = {
   RATE_LIMIT_MAX: 1000,
   AUDIT_RATE_LIMIT_MAX: 1000,
   LEAD_RATE_LIMIT_MAX: 1000,
+  STATUS_RATE_LIMIT_MAX: 1000,
 };
 
 export const healthyDeps = {

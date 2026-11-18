@@ -49,6 +49,7 @@ Adjust plans in `render.yaml` to your budget; check current pricing on Render.
 - [ ] Browser console on the live site: no CORS errors.
 
 ### TRUST_PROXY_HOPS: verify it
+The API default is `0` (trust no proxy; a client-supplied `X-Forwarded-For` is ignored). `render.yaml` sets `1`, which is right only if exactly one proxy sits in front of the service.
 Rate limiting keys on `req.ip`. Express derives it from `X-Forwarded-For` using the number of trusted proxy hops.
 Too low: all users share the proxy's IP and get limited together. Too high: clients can spoof their IP and dodge limits.
 Render puts at least one proxy in front of your service, and may add more (e.g. a CDN layer), so don't assume.

@@ -235,3 +235,44 @@ describe('GET /audits/compare/:firstId/:secondId', () => {
 });
 
 void startTestApp;
+
+describe('rate limiting: status polling is separate from the general budget', () => {
+  it('lets a normal audit poll many times without exhausting the general limit', async () => {
+    const { post, base } = await boot({}, { ...baseEnv, RATE_LIMIT_MAX: 5, STATUS_RATE_LIMIT_MAX: 1000 });
+    const id = (((await (await post({ url: 'example.com' })).json()) as Json).data!.id as string);
+    for (let i = 0; i < 40; i++) expect((await fetch(`${base}/audits/${id}/status`)).status).toBe(200); // 40 > RATE_LIMIT_MAX
+    // ...and the general budget still has room for the rest of the API (1 of 5 used by the POST).
+    expect((await fetch(`${base}/audits/${id}/report`)).status).not.toBe(429);
+  });
+
+  it('still enforces the general limit on everything that is not a status poll', async () => {
+    const { base } = await boot({}, { ...baseEnv, RATE_LIMIT_MAX: 3, STATUS_RATE_LIMIT_MAX: 1000 });
+    const codes: number[] = [];
+    for (let i = 0; i < 5; i++) codes.push((await fetch(`${base}/audits/00000000-0000-4000-8000-000000000000/report`)).status);
+    expect(codes.filter((c) => c === 429).length).toBe(2);
+  });
+
+  it('still limits status polling itself (abuse protection)', async () => {
+    const { post, base } = await boot({}, { ...baseEnv, STATUS_RATE_LIMIT_MAX: 3 });
+    const id = (((await (await post({ url: 'example.com' })).json()) as Json).data!.id as string);
+    const codes: number[] = [];
+    for (let i = 0; i < 5; i++) codes.push((await fetch(`${base}/audits/${id}/status`)).status);
+    expect(codes).toEqual([200, 200, 200, 429, 429]);
+  });
+});
+
+describe('rate limiting cannot be dodged by forging X-Forwarded-For', () => {
+  const send = (base: string, xff: string) =>
+    fetch(`${base}/audits`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': xff }, body: JSON.stringify({ url: 'http://localhost' }) }).then((r) => r.status);
+
+  it('with no trusted proxy (default), the header is ignored: the 3rd request is limited whatever it claims', async () => {
+    const { base } = await boot({}, { ...baseEnv, AUDIT_RATE_LIMIT_MAX: 2 });
+    expect([await send(base, '1.1.1.1'), await send(base, '2.2.2.2'), await send(base, '3.3.3.3')]).toEqual([422, 422, 429]);
+  });
+
+  it('behind one trusted proxy, clients are told apart by the address the proxy appended (rightmost)', async () => {
+    const { base } = await boot({}, { ...baseEnv, AUDIT_RATE_LIMIT_MAX: 1, TRUST_PROXY_HOPS: 1 });
+    // The forged left-hand entry is irrelevant; the proxy-appended right-hand one identifies the client.
+    expect([await send(base, 'forged, 10.0.0.1'), await send(base, 'forged2, 10.0.0.1'), await send(base, 'forged3, 10.0.0.2')]).toEqual([422, 429, 422]);
+  });
+});

@@ -53,6 +53,9 @@ describe('POST /leads', () => {
     ['message', { message: 'short' }],
     ['message', { message: 'x'.repeat(2001) }],
     ['name', { name: 'Bad\u0000Name' }],
+    ['name', { name: 'Asha\r\nBcc: attacker@example.com' }], // header-injection attempt
+    ['company', { company: 'Line1\nLine2' }],
+    ['website', { website: 'example.com\r\nX-Evil: 1' }],
   ])('rejects invalid %s with 400 and a field path, storing nothing', async (field, patch) => {
     const { post, leadRepo } = await boot();
     const res = await post({ ...valid, ...patch });
@@ -81,6 +84,12 @@ describe('POST /leads', () => {
     expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ data: { received: true } });
     expect(leadRepo.leads).toHaveLength(0);
+  });
+
+  it('allows line breaks in the free-text message only', async () => {
+    const { post, leadRepo } = await boot();
+    expect((await post({ ...valid, message: 'First line\nSecond line, please call me.' })).status).toBe(201);
+    expect(leadRepo.leads[0]!.message).toContain('\n');
   });
 
   it('stores markup verbatim as inert text (output encoding is the renderer’s job, never executed here)', async () => {

@@ -54,3 +54,50 @@ Application-level checks are necessary but not sufficient. Production must also:
 - The Security analyzer reports missing headers as *findings*, never as confirmed vulnerabilities, and never states a site is "secure".
 - Port restriction to 80/443 is a deliberate trade-off: it blocks probing of internal services on odd ports but means sites
   served only on custom ports cannot be audited.
+
+---
+
+## Pre-deployment verification (local, against real Postgres, Redis, Chromium and Docker)
+
+Run before the first deploy. Everything below was executed, not assumed.
+
+**Automated:** typecheck clean; builds pass; tests: net-guard 155, API 70, worker 141 (incl. 3 real-Chrome), web 99, shared 11.
+
+**Live browser walkthrough (real Chrome, real API/DB/worker), 42 checks:** landing sections; URL validation; internal/non-http URLs refused with
+friendly messages; a real audit through processing to the report; filters, expand, copy link, print stylesheet; shareable link in a fresh browser;
+second audit, history and compare; unknown/malformed ids; 404; consultation form (validation, success, hostile text not executed);
+no horizontal overflow on mobile for four pages; keyboard focus; no console errors or 5xx.
+
+**Live API security probes:**
+- ~45 SSRF forms all refused (422): localhost variants, decimal/hex/octal/short IPv4, IPv6 loopback and IPv4-mapped IPv6, link-local/metadata
+  (including `metadata.google.internal`), RFC1918/CGNAT/benchmark ranges, DNS names that resolve to loopback (`localtest.me`, `*.nip.io`),
+  `user@host` / `host@127.0.0.1` / `#@` tricks, non-standard ports (22, 6379, 8080, 5432), and `ftp:`/`gopher:`/`data:`/`file:`/`javascript:`.
+- Helmet headers present (CSP, HSTS, nosniff, frame, referrer, COOP/CORP), no `X-Powered-By`; CORS reflects only the allowlisted origin.
+- Malformed JSON, wrong content-type, unknown fields, array/object `url`, `__proto__`, oversize URL/body, SQL-injection and traversal in ids,
+  more than 50 ids: all rejected with a 4xx and a safe error envelope. Hostile text in the lead form is stored as inert text; tables intact.
+- `GET /audits` without explicit ids is refused (no enumeration of other visitors' URLs).
+- Rate limits return 429 with `Retry-After`: audits 5/min, leads 5/min.
+
+**Defects found by this pass and fixed (each with a regression test):**
+1. *Status polling shared the general 60/min budget*, so two audits in a minute (or two users behind one NAT) were throttled. Polling now has its own
+   limit (`STATUS_RATE_LIMIT_MAX`, default 300/min) and no longer consumes the general budget.
+2. *Forged `X-Forwarded-For` bypassed rate limits when `TRUST_PROXY_HOPS` was 1 with no proxy in front.* Default is now 0 (trust nothing);
+   Render's blueprint sets 1 explicitly. Verify per host, see `deployment.md`.
+3. *Line breaks were accepted in single-line lead fields* (future email-header injection). Single-line fields now reject control characters.
+4. The Security section now always states "hardening gaps, not confirmed vulnerabilities" instead of only inside an info finding hidden by the default filter.
+
+**Docker:** both images build; API container runs as non-root, applies migrations on start, and migrates an empty database from scratch; the
+worker container runs as non-root and completes real 5-category audits with the browser sandbox both on and off.
+
+## Known issues and accepted risks
+
+- **Dependencies (`npm audit`: 14, none auto-fixable without breaking changes).**
+  - *Runtime:* `zod` < 4.6.6 (memory exhaustion on huge constrained arrays). Mitigated: request bodies are capped at 10 KB and `ids` at 50 items,
+    so oversized collections cannot reach validation. Fix is the Zod 3 to 4 major migration; schedule it after launch.
+  - *Migration CLI:* `prisma` to `deepmerge-ts` (stack exhaustion when merging attacker-controlled objects). Only our own config is merged. Needs Prisma 7.
+  - *Build/test tooling only (not shipped, not reachable from the internet):* `vitest`/`tinypool` (reported critical), `vite`, `tsup`, `picomatch`, `tinyglobby`.
+- **Redirect-to-internal could not be exercised live**: public redirect services refuse internal targets themselves. It is covered by the net-guard tests
+  (real local servers and redirect chains) and the real-Chrome browser test.
+- **No end-to-end test of the Render/Vercel environments yet** (proxy hop count, Chromium sandbox on Render, CORS with the real Vercel origin).
+- Docker images are not slimmed (1.2 GB API, 2.7 GB worker); builds are slower but not less secure.
+- Report links are unguessable-UUID capability links, not authenticated.

@@ -8,13 +8,15 @@ const schema = z.object({
     .default('http://localhost:5173')
     .transform((v) => v.split(',').map((s) => s.trim()).filter(Boolean)),
   /** Reverse-proxy hops in front of the API, so req.ip (and rate limiting) use the real client. */
-  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(60),
   /** Max audit submissions per IP per window (the expensive operation). */
   AUDIT_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(5),
+  /** Max status polls per IP per window. Polling is cheap, read-only and frequent, so it has its own, higher limit. */
+  STATUS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(300),
   /** Max consultation requests per IP per window. */
   LEAD_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(5),
 });
