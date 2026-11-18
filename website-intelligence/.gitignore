@@ -1,11 +1,37 @@
+# dependencies
 node_modules/
+
+# build output
 dist/
+build/
+coverage/
+*.tsbuildinfo
+.vite/
+.turbo/
+
+# environment and secrets (only the example file is committed)
 .env
 .env.*
 !.env.example
-*.tsbuildinfo
-coverage/
-.DS_Store
+*.pem
+*.key
 
-# private interview/prep material
+# logs
+*.log
+npm-debug.log*
+
+# local tooling / OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.vercel
+.claude/
+
+# Playwright / test artifacts
+playwright-report/
+test-results/
+
+# private interview/prep material (kept local)
 docs-private/
