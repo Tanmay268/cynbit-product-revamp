@@ -1,0 +1,59 @@
+name: website-intelligence
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wi_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-website_intelligence}
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional: run the built app images locally ->  docker compose --profile app up --build
+  # (day-to-day development uses `npm run infra:up` plus the dev scripts instead.)
+  api:
+    profiles: [app]
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wi}:${POSTGRES_PASSWORD:-wi_dev_password}@postgres:5432/${POSTGRES_DB:-website_intelligence}
+      REDIS_URL: redis://redis:6379
+      API_PORT: "4000"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      TRUST_PROXY_HOPS: "0"
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    profiles: [app]
+    build: { context: ., dockerfile: apps/worker/Dockerfile }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wi}:${POSTGRES_PASSWORD:-wi_dev_password}@postgres:5432/${POSTGRES_DB:-website_intelligence}
+      REDIS_URL: redis://redis:6379
+      PAGESPEED_API_KEY: ${PAGESPEED_API_KEY:-}
+      BROWSER_NO_SANDBOX: ${BROWSER_NO_SANDBOX:-true}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  redisdata:
