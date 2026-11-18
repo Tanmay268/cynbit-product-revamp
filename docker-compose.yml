@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-wi}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wi_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-website_intelligence}
-    ports: ["5432:5432"]
+    ports: ["${POSTGRES_PORT:-5434}:5432"] # host port 5434 avoids clashing with a local Postgres on 5432
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
